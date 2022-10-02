@@ -7,7 +7,7 @@ inputs:
     required: true
   publish-profile:
     description: 'Applies to Web Apps(Windows and Linux) and Web App Containers(linux). Multi container scenario not supported. Publish profile (*.publishsettings) file contents with Web Deploy secrets'
-    required: false
+    required: true
   slot-name:
     description: 'Enter an existing Slot other than the Production slot'
     required: false
