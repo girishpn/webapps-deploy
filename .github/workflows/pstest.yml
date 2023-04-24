@@ -1,0 +1,37 @@
+name: Remove App Service from App Gateway
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  RESOURCE_GROUP_NAME: 'my-resource-group'
+  APP_SERVICE_NAME: 'my-app-service'
+  APP_GATEWAY_NAME: 'my-app-gateway'
+
+jobs:
+  remove-app-service-from-gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login via Azure PowerShell
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Remove App Service from App Gateway
+        run: |
+          $appGateway = Get-AzApplicationGateway -Name $env:APP_GATEWAY_NAME -ResourceGroupName $env:RESOURCE_GROUP_NAME
+          $backendPool = $appGateway.BackendAddressPools | Where-Object {$_.BackendAddresses.Fqdn -eq "$env:APP_SERVICE_NAME.azurewebsites.net"}
+          if ($backendPool) {
+            Write-Output "Removing backend pool for $env:APP_SERVICE_NAME"
+            $appGateway = Remove-AzApplicationGatewayBackendAddressPool -ApplicationGateway $appGateway -BackendAddressPool $backendPool
+            $appGateway = Set-AzApplicationGateway -ApplicationGateway $appGateway
+            Write-Output "Successfully removed $env:APP_SERVICE_NAME from $env:APP_GATEWAY_NAME"
+          } else {
+            Write-Output "$env:APP_SERVICE_NAME is not found in the backend pool of $env:APP_GATEWAY_NAME"
+          }
